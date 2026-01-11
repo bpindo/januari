@@ -146,6 +146,7 @@
     <button onclick="exportLocalStorage()">Backup Data ke File</button>
     <input type="file" id="importFile" accept=".json">
     <button onclick="importLocalStorage()">Import Data</button>
+	<button onclick="importFromURL()">🌐 Import dari Server</button>
   </div>
   <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
   
@@ -811,6 +812,72 @@ function restoreLink(link) {
   showToast('♻️ Produk berhasil dikembalikan', '#008000');
 }
 
+
+async function importFromURL() {
+  const url = 'https://bpindo.github.io/januari/backup.json';
+
+  if (!confirm('Ambil data backup dari server?\nData localStorage akan ditimpa.')) return;
+
+  try {
+    showToast('⏳ Mengambil data dari server...', '#666');
+
+    const res = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const data = await res.json();
+
+    if (typeof data !== 'object') {
+      throw new Error('Format JSON tidak valid');
+    }
+
+    Object.keys(data).forEach(key => {
+      localStorage.setItem(key, data[key]);
+    });
+	
+	resetAuditAndBaseline();
+	
+    showToast(
+      '✅ Data berhasil diambil dari server\nHalaman akan dimuat ulang...',
+      '#008000'
+    );
+
+    setTimeout(() => location.reload(), 1500);
+
+  } catch (err) {
+    showToast(
+      '❌ Gagal mengambil data:\n' + err.message,
+      '#cc0000'
+    );
+	location.reload();
+  }
+  }
+
+/*function resetAuditAndBaseline() {
+  localStorage.removeItem(AUDIT_LOG_KEY);
+
+  const lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .join('\n');
+
+  baselineHash = simpleHash(lines);
+  localStorage.setItem(getBaselineKey(), baselineHash);
+}*/
+
+function resetAuditAndBaseline() {
+  // 1. Hapus seluruh audit log
+  localStorage.removeItem(AUDIT_LOG_KEY);
+
+  // 2. Hapus baseline lama
+  //    Baseline baru akan dibuat otomatis saat halaman reload
+  localStorage.removeItem(getBaselineKey());
+
+  // 3. Reset hash di memori (opsional tapi rapi)
+  baselineHash = '';
+}
+
+
 </script>
 
 <!-- ================= LOG CONTROLS ================= -->
@@ -908,5 +975,5 @@ function restoreLink(link) {
 </div>
 
 
-</body>
 </html>
+</body>

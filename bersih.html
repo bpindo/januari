@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧹 Pembersih Duplikat Antar File LocalStorage</title>
+<style>
+body{
+  font-family: Arial, sans-serif;
+  max-width:800px;
+  margin:auto;
+  padding:20px;
+  background:#fffef6;
+}
+h1{ color:#b36b00; text-align:center; }
+button{
+  width:100%;
+  padding:14px;
+  font-size:1rem;
+  margin-top:12px;
+  cursor:pointer;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+#log{
+  white-space:pre-line;
+  background:#fff;
+  border:1px solid #ddd;
+  padding:12px;
+  margin-top:15px;
+  font-size:0.9rem;
+}
+.warn{ background:#ffe6e6; border-color:#cc0000; }
+.ok{ background:#e6ffe6; border-color:#008000; }
+</style>
+</head>
+<body>
+
+<h1>🧹 Pembersih Duplikat Antar File</h1>
+
+<p>
+Tool ini akan:
+<ul>
+  <li>Mengambil semua <b>appData_*.txt</b> dari localStorage</li>
+  <li>Menghapus link duplikat antar file</li>
+  <li>Menyimpan ulang data ke localStorage</li>
+</ul>
+</p>
+
+<button id="scanBtn">🔍 Scan & Tampilkan Duplikat</button>
+<button id="hapusBtn" class="warn">🗑 HAPUS DUPLIKAT ANTAR FILE</button>
+
+<div id="log"></div>
+
+<script>
+const logEl = document.getElementById('log');
+
+function ambilSemuaFile() {
+  return Object.keys(localStorage)
+    .filter(k => k.startsWith('appData_'))
+    .map(k => ({
+      key: k,
+      file: k.replace('appData_',''),
+      data: JSON.parse(localStorage.getItem(k) || '{}')
+    }));
+}
+
+function scanDuplikat() {
+  const files = ambilSemuaFile();
+  const map = new Map();
+  const laporan = [];
+
+  files.forEach(f => {
+    const links = (f.data.inputList || '')
+      .split('\n').map(l=>l.trim()).filter(Boolean);
+
+    links.forEach(link => {
+      if (!map.has(link)) {
+        map.set(link, f.file);
+      } else {
+        laporan.push(`❌ ${link}\n   • File: ${f.file}\n   • Duplikat dari: ${map.get(link)}\n`);
+      }
+    });
+  });
+
+  logEl.textContent = laporan.length
+    ? `Ditemukan ${laporan.length} duplikat:\n\n` + laporan.join('\n')
+    : '✅ Tidak ada duplikat antar file';
+}
+
+function hapusDuplikatAntarFile() {
+  const files = ambilSemuaFile();
+  const pemilik = new Map();
+  let totalHapus = 0;
+  let laporan = [];
+
+  files.forEach(f => {
+    const links = (f.data.inputList || '')
+      .split('\n').map(l=>l.trim()).filter(Boolean);
+
+    const hasil = [];
+
+    links.forEach(link => {
+      if (!pemilik.has(link)) {
+        pemilik.set(link, f.file);
+        hasil.push(link);
+      } else {
+        totalHapus++;
+        laporan.push(`❌ ${link}\n   • Dihapus dari: ${f.file}\n   • Dipertahankan di: ${pemilik.get(link)}\n`);
+      }
+    });
+
+    f.data.inputList = hasil.join('\n');
+    localStorage.setItem(f.key, JSON.stringify(f.data));
+  });
+
+  logEl.textContent =
+    `SELESAI\n\nTotal duplikat dihapus: ${totalHapus}\n\n` +
+    (laporan.length ? laporan.join('\n') : '');
+
+  alert('Duplikat antar file berhasil dibersihkan!');
+}
+
+document.getElementById('scanBtn').onclick = scanDuplikat;
+document.getElementById('hapusBtn').onclick = () => {
+  if (confirm(
+    'Yakin hapus DUPLIKAT ANTAR FILE?\n\n' +
+    '✔ Link disimpan di file pertama\n' +
+    '❌ Tidak bisa undo kecuali backup\n'
+  )) {
+    hapusDuplikatAntarFile();
+  }
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produk Live MadGazan</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
+  h1,h2,h3 { color:#b36b00; text-align:center; }
+  h1 { font-size:1.6rem; margin-bottom:5px; }
+  h2 { font-size:1.2rem; margin-bottom:10px; }
+  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea { height:150px; }
+  #output { display:none; margin-top:10px; background:#fff; border-radius:8px; border:1px solid #ffd42a; padding:10px 15px; box-shadow:0 0 8px rgba(255,212,42,0.2);}
+  .link-item {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#fffbec;
+    padding:8px 10px;
+    border-bottom:1px dashed #ffd42a;
+    border-radius:5px;
+    margin-bottom:6px;
+  }
+  .link-item a.link {
+    color:#0066cc;
+    text-decoration:none;
+    word-break:break-all;
+    flex:1;
+  }
+  .input-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #eee;
+  }
+
+  .link-item a.link:hover { text-decoration:underline; }
+  .link-item a.report {
+    color:#cc0000;
+    text-decoration:none;
+    font-weight:bold;
+    margin-left:10px;
+    white-space:nowrap;
+  }
+  .link-item a.report:hover { text-decoration:underline; }
+
+  .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
+  .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
+  .active { font-weight:bold; background-color:#ffd42a; color:#b36b00; border-color:#b36b00; }
+  #copyBtn { margin-top:12px; padding:12px; font-size:1rem; cursor:pointer; border:none; background-color:#ffd42a; color:#b36b00; border-radius:6px; width:100%; }
+  #copyBtn:hover { background-color:#e6c72b; }
+  .input-buttons { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .input-buttons button { flex:1; padding:10px; font-size:0.95rem; cursor:pointer; border:1px solid #ccc; border-radius:6px; background:#f5f5f5; }
+  .input-buttons button:hover { background:#eee; }
+  #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
+  .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
+  .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  @media (max-width:720px){
+    body { padding:12px; }
+    textarea{ height:120px; }
+  }
+  @media (max-width:480px){
+    h1,h2,h3{ font-size:1rem; }
+    textarea{ height:120px; font-size:0.9rem; }
+    #output{ font-size:0.85rem; }
+    .page-btn{ padding:8px 12px; font-size:0.9rem; }
+    #copyBtn{ font-size:0.95rem; }
+    .input-buttons{ flex-direction:column; }
+    .input-buttons button{ flex:unset; width:100%; }
+  }
+
+  /* ✅ Toast Notification Style */
+  #toast {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s, transform 0.4s;
+    z-index: 9999;
+    max-width: 320px;
+    white-space: pre-line;
+    line-height:1.3;
+    font-size:0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Produk Live MadGazan</h1>
+<h2>Manajemen Shopee Live</h2>
+
+<textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
+
+<div class="input-buttons">
+  <button id="clearInputLinksBtn">Clear Input Links</button>
+  <button id="copyInputLinksBtn">Copy Input Links</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat</button>
+  <button id="sortirPerTokoBtn" disabled title="Fitur ini dinonaktifkan">Sortir Berdasarkan Toko</button>
+
+</div>
+
+<h3>Nama Akun</h3>
+<select id="fileDropdown">
+  <option value="">-- Pilih Akun --</option>
+  <option value="jalb.txt">jalb</option>
+  <option value="rano.txt">rano</option>
+  <option value="indah.txt">kakfitro</option>
+  <option value="rini.txt">rini</option>
+  <option value="nurbad.txt">nurbad</option>
+  <option value="dewakaya.txt">dewakaya</option>
+
+</select>
+<div id="updateNotice" style="margin:10px 0; font-weight:bold;"></div>
+
+
+<div class="sponsor">
+  Disponsori oleh <strong>MadGazan Studio</strong><br>
+</div>
+
+<div id="stats"></div>
+
+<h3>Output (Produk Siap Live)</h3>
+<div id="output"></div>
+<button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
+
+<div class="pagination" id="pagination"></div>
+<div style="text-align:center;margin-top:10px;">
+  <button onclick="openDeletedPage()"
+    style="background:#ffe6e6;border:1px solid #cc0000;padding:8px 14px;border-radius:6px;">
+    🗑 Halaman Hapus
+  </button>
+</div>
+
+
+<div class="backup-area">
+  <h3>🔒 Backup & Import Data</h3>
+  <div class="input-buttons">
+    <button onclick="exportLocalStorage()">Backup Data ke File</button>
+    <input type="file" id="importFile" accept=".json">
+    <button onclick="importLocalStorage()">Import Data</button>
+  </div>
+  <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
+  
+</div>
+
+<footer>
+  © 2025 MadGazan Studio — Semua Hak Dilindungi
+</footer>
+
+<!-- ✅ Elemen Toast -->
+<div id="toast"></div>
+
+<script>
+const AUDIT_LOG_KEY = 'bgAuditLog';
+let baselineHash = '';
+
+const MAX_PER_PAGE = 99;
+const PAGE_OFFSET = 0;
+let allPages = [];
+let currentPage = 1;
+
+const inputLinksEl = document.getElementById('inputLinks');
+const statsEl = document.getElementById('stats');
+const outputEl = document.getElementById('output');
+const paginationEl = document.getElementById('pagination');
+const dropdownEl = document.getElementById('fileDropdown');
+
+const FILE_LABELS = {
+  'jalb.txt': 'jalb',
+  'rano.txt': 'rano',
+  'indah.txt': 'kakfitro',
+  'rini.txt': 'rini',
+  'nurbad.txt': 'nurbad',
+  'dewakaya.txt': 'dewakaya'
+
+};
+
+
+function simpleHash(text) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash.toString();
+}
+
+function getProductId(link) {
+  const m = link.match(/product\/(\d+)\/(\d+)/);
+  return m ? `${m[1]}_${m[2]}` : null;
+}
+
+function getBaselineKey() {
+  return 'baseline_' + (dropdownEl.value || 'default');
+}
+
+function appendAuditLog(entry) {
+  const old = localStorage.getItem(AUDIT_LOG_KEY) || '';
+  localStorage.setItem(AUDIT_LOG_KEY, old + entry + '\n');
+}
+
+function appendAuditLogV2(action, payload = {}) {
+  const entry = {
+    v: 2,
+    action,
+    file: dropdownEl.value || 'default',
+    pid: payload.pid || null,
+    from: payload.from ?? null,
+    to: payload.to ?? null,
+    base: baselineHash || null,
+    ts: Date.now()
+  };
+  const old = localStorage.getItem(AUDIT_LOG_KEY) || '';
+  localStorage.setItem(AUDIT_LOG_KEY, old + JSON.stringify(entry) + '\n');
+}
+
+function applyDropdownLabels() {
+  [...dropdownEl.options].forEach(opt => {
+    if (!opt.value) return; // skip "-- Pilih File TXT --"
+    opt.textContent = FILE_LABELS[opt.value] || opt.value;
+  });
+}
+
+
+/* ✅ FUNGSI TOAST */
+function showToast(message, color = '#333') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.style.background = color;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(20px)';
+  }, 4000);
+}
+
+/* ===== Penyimpanan Data ===== */
+function getStorageKey() {
+  const f = dropdownEl.value || 'default';
+  return 'appData_' + f;
+}
+
+function getDeletedKey() {
+  const f = dropdownEl.value || 'default';
+  return 'deleted_' + f;
+}
+
+function getDeletedLinks() {
+  return JSON.parse(localStorage.getItem(getDeletedKey()) || '[]');
+}
+
+function saveDeletedLinks(arr) {
+  localStorage.setItem(getDeletedKey(), JSON.stringify(arr));
+}
+
+
+function saveAppData() {
+  const key = getStorageKey();
+  const data = { inputList: inputLinksEl.value, currentPage: currentPage };
+  localStorage.setItem(key, JSON.stringify(data));
+}
+function loadAppData() {
+  const key = getStorageKey();
+  const data = JSON.parse(localStorage.getItem(key) || '{}');
+  if (data.inputList) inputLinksEl.value = data.inputList;
+  currentPage = data.currentPage || 1;
+}
+
+/* ===== Saat Halaman Dimuat ===== */
+window.addEventListener('load', () => {
+  const savedDropdown = localStorage.getItem('selectedFile');
+  if (savedDropdown) dropdownEl.value = savedDropdown;
+
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
+
+  // ✅ baseline lokal
+  const lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .join('\n');
+
+  baselineHash = localStorage.getItem(getBaselineKey());
+
+if (!baselineHash) {
+  baselineHash = simpleHash(lines);
+  localStorage.setItem(getBaselineKey(), baselineHash);
+}
+  applyDropdownLabels();
+
+});
+
+dropdownEl.addEventListener('change', () => {
+  localStorage.setItem('selectedFile', dropdownEl.value);
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
+
+  // ✅ reset baseline untuk file baru
+  const lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .join('\n');
+
+baselineHash = localStorage.getItem(getBaselineKey());
+
+if (!baselineHash) {
+  baselineHash = simpleHash(lines);
+  localStorage.setItem(getBaselineKey(), baselineHash);
+}
+
+});
+
+
+/* ===== Tombol Input ===== */
+inputLinksEl.addEventListener('input', () => {
+  processLinks();
+  saveAppData();
+});
+
+document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
+  inputLinksEl.value = '';
+  saveAppData();
+  processLinks();
+  showToast('Input berhasil dikosongkan.', '#b36b00');
+});
+document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
+  const text = inputLinksEl.value.trim();
+  if (!text) return showToast('Input kosong!', '#cc0000');
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Input disalin ke clipboard!', '#008000'));
+});
+document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
+  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const unique = [...new Set(lines)];
+  inputLinksEl.value = unique.join('\n');
+  processLinks();
+  saveAppData();
+  showToast('✅ Duplikat dihapus!', '#008000');
+});
+
+/* === Sortir Berdasarkan ID Toko === */
+/*document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
+  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const tokoMap = new Map();
+  for (let link of lines) {
+    const match = link.match(/product\/(\d+)\/(\d+)/);
+    if (match) {
+      const shopId = match[1];
+      if (!tokoMap.has(shopId)) tokoMap.set(shopId, link);
+    }
+  }
+  const hasil = Array.from(tokoMap.values());
+  inputLinksEl.value = hasil.join('\n');
+  processLinks();
+  saveAppData();
+  showToast(`✅ Sortir selesai!\nTotal toko unik: ${hasil.length}`, '#008000');
+});*/
+
+/* === Sortir Berdasarkan ID Toko (DINONAKTIFKAN) === */
+document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
+  showToast('⚠️ Fitur sortir berdasarkan toko dinonaktifkan.', '#b36b00');
+});
+
+
+/* ===== Proses Link ===== */
+function processLinks() {
+  const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const unique = [...new Set(raw)];
+  const dup = raw.length - unique.length;
+  allPages = [];
+  for (let i = 0; i < unique.length; i += MAX_PER_PAGE) {
+    allPages.push(unique.slice(i, i + MAX_PER_PAGE));
+  }
+  if (currentPage > allPages.length) currentPage = 1;
+  renderStats(raw.length, unique.length, dup);
+  renderPagination();
+}
+function renderStats(total, uniq, dup) {
+  statsEl.textContent =
+    `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
+}
+
+/* ===== Tampilkan Halaman ===== */
+function showPage(page) {
+  if (!allPages.length) { outputEl.style.display = 'none'; return; }
+  currentPage = page;
+  const fileNow = dropdownEl.value || 'default.txt';
+  outputEl.innerHTML = allPages[page - 1].map(l => {
+    const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
+    return `<div class="link-item">
+  <a class="link" href="${l}" target="_blank">${l}</a>
+
+  <a class="report"
+     href="${reportUrl}"
+     target="_blank"
+     title="Laporkan produk bermasalah">
+     🚩
+  </a>
+
+  <a href="javascript:void(0)"
+     class="report"
+     title="Turunkan ke urutan paling akhir"
+     onclick="turunkanLink('${l.replace(/'/g, "\\'")}')">
+     ⬇️
+  </a>
+  
+  <a href="javascript:void(0)"
+   class="report"
+   title="Pindahkan ke halaman hapus"
+   onclick="hapusKeHalaman('${l.replace(/'/g, "\\'")}')">
+   🗑
+</a>
+</div>`;
+
+
+
+  }).join('');
+  outputEl.style.display = 'block';
+  highlightActivePage();
+  saveAppData();
+}
+function renderPagination() {
+  paginationEl.innerHTML = '';
+  for (let i = 1; i <= allPages.length; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i + PAGE_OFFSET;
+    btn.className = 'page-btn';
+    if (i === currentPage) btn.classList.add('active');
+    btn.onclick = () => showPage(i);
+    paginationEl.appendChild(btn);
+  }
+}
+function highlightActivePage() {
+  document.querySelectorAll('.page-btn').forEach((btn, index) => {
+    btn.classList.toggle('active', index + 1 === currentPage);
+  });
+}
+function copyToClipboard() {
+  if (!allPages.length) return showToast('Tidak ada link!', '#cc0000');
+  const text = allPages[currentPage - 1].join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Link halaman ini disalin!', '#008000'));
+}
+
+function turunkanLink(link) {
+  let lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  const idx = lines.indexOf(link);
+  if (idx === -1) return;
+
+  const pid = getProductId(link);
+  if (!pid) return;
+
+  // pindahkan ke akhir
+  lines.splice(idx, 1);
+  lines.push(link);
+
+  const currentHash = simpleHash(lines.join('\n'));
+
+  if (baselineHash && currentHash !== baselineHash) {
+    appendAuditLogV2('MOVE', {
+      pid,
+      from: idx,
+      to: 'LAST'
+    });
+  }
+
+  inputLinksEl.value = lines.join('\n');
+  processLinks();
+  showPage(currentPage);
+  saveAppData();
+
+  showToast('⬇️ Link dipindahkan ke urutan paling akhir', '#b36b00');
+}
+
+
+
+function replayLog(logText) {
+  const entries = logText
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  let data = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  for (const row of entries) {
+    let entry;
+    try {
+      entry = JSON.parse(row);
+    } catch {
+      continue; // skip log lama
+    }
+
+    if (entry.v !== 2 || entry.action !== 'MOVE') continue;
+
+    const idx = data.findIndex(l => getProductId(l) === entry.pid);
+    if (idx === -1) continue;
+
+    const link = data.splice(idx, 1)[0];
+
+    if (entry.to === 'LAST') {
+      data.push(link);
+    } else if (Number.isInteger(entry.to)) {
+      data.splice(entry.to, 0, link);
+    }
+  }
+
+  inputLinksEl.value = data.join('\n');
+  processLinks();
+  showPage(1);
+  saveAppData();
+}
+
+
+
+/* ===== Backup & Import ===== */
+function exportLocalStorage() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    data[key] = localStorage.getItem(key);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'madgazan_backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Data berhasil disimpan ke madgazan_backup.json', '#008000');
+}
+function importLocalStorage() {
+  const fileInput = document.getElementById('importFile');
+  const file = fileInput.files[0];
+  if (!file) return showToast('Pilih file JSON dulu.', '#cc0000');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      Object.keys(data).forEach(key => {
+        localStorage.setItem(key, data[key]);
+      });
+      showToast('✅ Data berhasil diimport. Reload halaman untuk melihat hasil.', '#008000');
+      setTimeout(() => location.reload(), 1500);
+    } catch (err) {
+      showToast('❌ File tidak valid: ' + err.message, '#cc0000');
+    }
+  };
+  reader.readAsText(file);
+}
+function resetLocalStorage() {
+  if (confirm('Yakin ingin menghapus semua data localStorage?')) {
+    localStorage.clear();
+    showToast('Semua data localStorage telah dihapus.', '#b36b00');
+    setTimeout(() => location.reload(), 1000);
+  }
+}
+
+/* ===== Sinkron Semua File ===== */
+async function syncAllFiles() {
+  const options = Array.from(dropdownEl.options).filter(o => o.value);
+  if (!options.length) return showToast('Tidak ada file di dropdown.', '#cc0000');
+  //if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
+
+  let success = 0, fail = 0, lastText = '', lastFile = '';
+
+  for (const opt of options) {
+    try {
+      const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const key = 'appData_' + opt.value;
+      const data = { inputList: text.trim(), currentPage: 1 };
+      localStorage.setItem(key, JSON.stringify(data));
+      success++;
+      lastText = text.trim();
+      lastFile = opt.value;
+    } catch (e) {
+      console.warn(`❌ Gagal ambil ${opt.value}:`, e);
+      fail++;
+    }
+  }
+
+  if (lastText) {
+    inputLinksEl.value = lastText;
+    dropdownEl.value = lastFile;
+    localStorage.setItem('selectedFile', lastFile);
+    processLinks();
+    showPage(1);
+  }
+
+  showToast(`✅ Sinkronisasi selesai\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir: ${lastFile}`, fail>0?'#b36b00':'#008000');
+}
+
+/* Hubungkan Tombol Sinkron */
+//document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
+//document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
+
+/* ===== Cek Update File Server ===== */
+async function checkForUpdates() {
+/*  const selectedFile = dropdownEl.value;
+  const noticeEl = document.getElementById('updateNotice');
+  if (!selectedFile) { noticeEl.textContent = ''; return; }
+
+  const fileName = selectedFile.split('/').pop();
+  noticeEl.textContent = `⏳ Memeriksa versi server untuk "${fileName}"...`;
+  noticeEl.style.color = '#666';
+
+  try {
+    const res = await fetch(selectedFile + '?check=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const serverText = (await res.text()).trim();
+	baselineHash = simpleHash(serverText);
+
+
+    const localKey = 'appData_' + selectedFile;
+    const localData = JSON.parse(localStorage.getItem(localKey) || '{}');
+    const localText = (localData.inputList || '').trim();
+
+    if (serverText !== localText) {
+      noticeEl.textContent = `⚠️ Data lokal "${fileName}" berbeda dengan versi server.`;
+      noticeEl.style.color = '#b30000';
+    } else {
+      noticeEl.textContent = `✅ Data lokal "${fileName}" sudah versi terbaru.`;
+      noticeEl.style.color = '#008000';
+      setTimeout(() => { noticeEl.textContent = ''; }, 5000);
+    }
+  } catch (err) {
+    noticeEl.textContent = `❌ Tidak dapat menghubungi server untuk "${fileName}".`;
+    noticeEl.style.color = '#b30000';
+  }
+*/}
+
+function openImportLogPopup() {
+  document.getElementById('importLogPopup').style.display = 'block';
+}
+function closeImportLog() {
+  document.getElementById('importLogPopup').style.display = 'none';
+}
+
+
+function openLogPopup() {
+  const log = localStorage.getItem(AUDIT_LOG_KEY) || '';
+  document.getElementById('logText').value = log || '(log kosong)';
+  document.getElementById('logPopup').style.display = 'block';
+}
+
+function closeLogPopup() {
+  document.getElementById('logPopup').style.display = 'none';
+}
+
+function copyLog() {
+  const ta = document.getElementById('logText');
+  ta.select();
+  document.execCommand('copy');
+  alert('Log berhasil dicopy');
+}
+
+function replayImportedLog() {
+  const logText = document.getElementById('importLogText').value.trim();
+  if (!logText) return alert('Log kosong');
+
+  const fileAktif = dropdownEl.value || '(default)';
+
+  if (!confirm(
+    `Replay log hanya akan diterapkan ke file AKTIF:\n\n` +
+    `📂 ${fileAktif}\n\n` +
+    `File lain TIDAK akan berubah.\n\nLanjutkan?`
+  )) return;
+
+  replayLog(logText);
+  closeImportLog();
+
+  showToast(
+    `✅ Log diterapkan ke file:\n${fileAktif}`,
+    '#008000'
+  );
+}
+
+
+function resetAuditLogConfirm() {
+  if (!confirm(
+    'Reset Audit Log?\n\n' +
+    '• Semua log perubahan akan dihapus\n' +
+    '• Kondisi saat ini dijadikan baseline baru\n\n' +
+    'Tindakan ini TIDAK bisa dibatalkan.\n\n' +
+    'Lanjutkan?'
+  )) return;
+
+  resetAuditLog();
+}
+
+function resetAuditLog() {
+  // hapus audit log
+  localStorage.removeItem(AUDIT_LOG_KEY);
+
+  // buat baseline baru dari kondisi saat ini
+  const lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .join('\n');
+
+  baselineHash = simpleHash(lines);
+
+  // ✅ SIMPAN BASELINE PER FILE
+  localStorage.setItem(getBaselineKey(), baselineHash);
+
+  showToast('🗑 Audit log direset.\nBaseline baru dibuat.', '#008000');
+}
+
+
+function hapusKeHalaman(link) {
+  let lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  const idx = lines.indexOf(link);
+  if (idx === -1) return;
+
+  // hapus dari list utama
+  lines.splice(idx, 1);
+
+  // simpan ke halaman hapus
+  const deleted = getDeletedLinks();
+  deleted.push(link);
+  saveDeletedLinks(deleted);
+
+  inputLinksEl.value = lines.join('\n');
+
+  processLinks();
+  showPage(currentPage);
+  saveAppData();
+
+  appendAuditLogV2('DELETE_SOFT', {
+    pid: getProductId(link),
+    from: idx,
+    to: 'DELETED_PAGE'
+  });
+
+  showToast('🗑 Produk dipindahkan ke Halaman Hapus', '#b30000');
+}
+function openDeletedPage() {
+  const deleted = getDeletedLinks();
+  
+  document.getElementById('copyBtn').disabled = false;
+
+
+  if (!deleted.length) {
+    outputEl.innerHTML = '<i>Halaman hapus kosong</i>';
+  } else {
+    outputEl.innerHTML = deleted.map(l => `
+      <div class="link-item">
+        <a class="link" href="${l}" target="_blank">${l}</a>
+
+        <a href="javascript:void(0)"
+           class="report"
+           title="Kembalikan produk"
+           onclick="restoreLink('${l.replace(/'/g, "\\'")}')">
+           ♻️
+        </a>
+      </div>
+    `).join('');
+  }
+
+  outputEl.style.display = 'block';
+  paginationEl.innerHTML = '';
+  statsEl.textContent = '🗑 Halaman Hapus (soft delete)';
+}
+
+function restoreLink(link) {
+  let deleted = getDeletedLinks();
+  deleted = deleted.filter(l => l !== link);
+  saveDeletedLinks(deleted);
+
+  let lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  lines.push(link); // kembalikan ke akhir
+
+  inputLinksEl.value = lines.join('\n');
+  processLinks();
+  showPage(allPages.length);
+
+  appendAuditLogV2('RESTORE', {
+    pid: getProductId(link),
+    from: 'DELETED_PAGE',
+    to: 'LAST'
+  });
+
+  showToast('♻️ Produk berhasil dikembalikan', '#008000');
+}
+
+</script>
+
+<!-- ================= LOG CONTROLS ================= -->
+<div id="logControls" style="
+  position:fixed;
+  bottom:8px;
+  right:8px;
+  display:flex;
+  gap:6px;
+  z-index:9999;
+  opacity:0.45;
+">
+  <button onclick="openLogPopup()" title="Audit Log"
+    style="font-size:11px;padding:4px 6px;">
+    🧾 Log
+  </button>
+
+  <button onclick="openImportLogPopup()" title="Import & Replay Log"
+    style="font-size:11px;padding:4px 6px;">
+    📥 Import
+  </button>
+
+  <!-- ✅ TOMBOL RESET LOG -->
+  <button onclick="resetAuditLogConfirm()" title="Reset Audit Log"
+    style="font-size:11px;padding:4px 6px;color:#b30000;">
+    🗑 Reset
+  </button>
+</div>
+
+
+<!-- ================= AUDIT LOG POPUP ================= -->
+<div id="logPopup" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  z-index:10000;
+">
+  <div style="
+    background:#fff;
+    max-width:600px;
+    margin:8% auto;
+    padding:10px;
+    border-radius:6px;
+  ">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>Audit Log</strong>
+      <button onclick="closeLogPopup()">✖</button>
+    </div>
+
+    <textarea id="logText" style="
+      width:100%;
+      height:220px;
+      margin-top:8px;
+      font-size:12px;
+    " readonly></textarea>
+
+    <button onclick="copyLog()" style="margin-top:6px">
+      📋 Copy Log
+    </button>
+  </div>
+</div>
+
+<!-- ================= IMPORT LOG POPUP ================= -->
+<div id="importLogPopup" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  z-index:10001;
+">
+  <div style="
+    background:#fff;
+    max-width:600px;
+    margin:8% auto;
+    padding:10px;
+    border-radius:6px;
+  ">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>Import & Replay Log</strong>
+      <button onclick="closeImportLog()">✖</button>
+    </div>
+
+    <textarea id="importLogText" style="
+      width:100%;
+      height:220px;
+      margin-top:8px;
+      font-size:12px;
+    " placeholder="Paste log di sini..."></textarea>
+
+    <button onclick="replayImportedLog()" style="margin-top:6px">
+      ▶ Terapkan Log
+    </button>
+  </div>
+</div>
+
+
+</body>
+</html>

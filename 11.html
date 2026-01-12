@@ -70,6 +70,15 @@
     .input-buttons{ flex-direction:column; }
     .input-buttons button{ flex:unset; width:100%; }
   }
+  
+  .link-no{
+  width:36px;
+  text-align:right;
+  font-weight:bold;
+  color:#b36b00;
+  margin-right:8px;
+  flex-shrink:0;
+}
 
   /* ✅ Toast Notification Style */
   #toast {
@@ -94,8 +103,8 @@
 </head>
 <body>
 
-<h1>Produk Live MadGazan</h1>
-<h2>Manajemen Shopee Live</h2>
+<h1>Produk Live SHopee MadGazan</h1>
+<h2>12 Januari 2026</h2>
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -239,20 +248,14 @@ function collectBackupData() {
 }
 
 
-function getBackupFileName() {
+/*function getBackupFileName() {
   const d = new Date();
-
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
 
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-
-  return `backup${dd}${mm}${yyyy}_${hh}${mi}${ss}.json`;
-}
-
+  return `backup${dd}${mm}${yyyy}.json`;
+}*/
 
 async function backupToGithub() {
   let token = getGithubToken();
@@ -264,22 +267,23 @@ async function backupToGithub() {
     }
   }
 
-  const fileName = getBackupFileName();
-  const path = `backup/${fileName}`;
+  const fileName = 'backup.json'; // ✅ FILE TETAP
+  const path = fileName;
 
   const payload = collectBackupData();
   const contentBase64 = btoa(
     unescape(encodeURIComponent(JSON.stringify(payload, null, 2)))
   );
 
-  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
+  const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
+  const viewUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${path}`;
 
   showToast('⏳ Mengirim backup ke GitHub...', '#666');
 
   try {
-    // cek apakah file sudah ada (optional)
+    // 🔍 cek apakah backup.json sudah ada
     let sha = null;
-    const check = await fetch(url, {
+    const check = await fetch(apiUrl, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -288,14 +292,15 @@ async function backupToGithub() {
       sha = existing.sha;
     }
 
-    const res = await fetch(url, {
+    // ⬆️ upload / overwrite
+    const res = await fetch(apiUrl, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: `Backup ${fileName}`,
+        message: 'Update backup.json (auto)',
         content: contentBase64,
         branch: GITHUB_BRANCH,
         sha
@@ -308,9 +313,14 @@ async function backupToGithub() {
     }
 
     showToast(
-      `✅ Backup berhasil\n📁 ${fileName}`,
+      '✅ Backup berhasil\nMembuka file di GitHub...',
       '#008000'
     );
+
+    // 🌐 LANGSUNG ARAHKAN KE FILE
+    setTimeout(() => {
+      window.open(viewUrl, '_blank');
+    }, 800);
 
   } catch (err) {
     showToast(
@@ -534,12 +544,14 @@ function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
   const fileNow = dropdownEl.value || 'default.txt';
-  outputEl.innerHTML = allPages[page - 1].map(l => {
+  outputEl.innerHTML = allPages[page - 1].map((l, idx) => {
+  const nomor = idx + 1;
     const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
     return `<div class="link-item">
-  <a class="link" href="${l}" target="_blank">${l}</a>
 
-  
+  <div class="link-no">${nomor}.</div>
+
+  <a class="link" href="${l}" target="_blank">${l}</a>
 
 <a href="javascript:void(0)"
    class="report"
@@ -990,9 +1002,12 @@ function openDeletedPage() {
   if (!deleted.length) {
     outputEl.innerHTML = '<i>Halaman hapus kosong</i>';
   } else {
-    outputEl.innerHTML = deleted.map(l => `
-      <div class="link-item">
-        <a class="link" href="${l}" target="_blank">${l}</a>
+    outputEl.innerHTML = deleted.map((l, idx) => `
+     <div class="link-item">
+
+<div class="link-no">${idx + 1}.</div>
+
+  <a class="link" href="${l}" target="_blank">${l}</a>
 
         <a href="javascript:void(0)"
            class="report"
@@ -1046,33 +1061,40 @@ async function importFromURL() {
     const res = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
-    const data = await res.json();
+    const json = await res.json();
 
-    if (typeof data !== 'object') {
-      throw new Error('Format JSON tidak valid');
+    if (!json.storage || typeof json.storage !== 'object') {
+      throw new Error('Format backup tidak valid (storage tidak ditemukan)');
     }
 
-    Object.keys(data).forEach(key => {
-      localStorage.setItem(key, data[key]);
+    // ✅ bersihkan data lama (token aman)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key.startsWith('__github_')) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    // ✅ restore storage
+    Object.entries(json.storage).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
     });
-	
-	resetAuditAndBaseline();
-	
+
+    // ✅ reset audit & baseline (akan dibuat ulang saat load)
+    localStorage.removeItem(AUDIT_LOG_KEY);
+
     showToast(
-      '✅ Data berhasil diambil dari server\nHalaman akan dimuat ulang...',
+      '✅ Data berhasil diimport dari server\nHalaman akan dimuat ulang...',
       '#008000'
     );
 
-    setTimeout(() => location.reload(), 1500);
+    setTimeout(() => location.reload(), 1200);
 
   } catch (err) {
-    showToast(
-      '❌ Gagal mengambil data:\n' + err.message,
-      '#cc0000'
-    );
-	location.reload();
+    showToast('❌ Import gagal:\n' + err.message, '#cc0000');
   }
-  }
+}
+
 
 /*function resetAuditAndBaseline() {
   localStorage.removeItem(AUDIT_LOG_KEY);

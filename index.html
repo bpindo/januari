@@ -1040,33 +1040,40 @@ async function importFromURL() {
     const res = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
-    const data = await res.json();
+    const json = await res.json();
 
-    if (typeof data !== 'object') {
-      throw new Error('Format JSON tidak valid');
+    if (!json.storage || typeof json.storage !== 'object') {
+      throw new Error('Format backup tidak valid (storage tidak ditemukan)');
     }
 
-    Object.keys(data).forEach(key => {
-      localStorage.setItem(key, data[key]);
+    // ✅ bersihkan data lama (token aman)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key.startsWith('__github_')) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    // ✅ restore storage
+    Object.entries(json.storage).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
     });
-	
-	resetAuditAndBaseline();
-	
+
+    // ✅ reset audit & baseline (akan dibuat ulang saat load)
+    localStorage.removeItem(AUDIT_LOG_KEY);
+
     showToast(
-      '✅ Data berhasil diambil dari server\nHalaman akan dimuat ulang...',
+      '✅ Data berhasil diimport dari server\nHalaman akan dimuat ulang...',
       '#008000'
     );
 
-    setTimeout(() => location.reload(), 1500);
+    setTimeout(() => location.reload(), 1200);
 
   } catch (err) {
-    showToast(
-      '❌ Gagal mengambil data:\n' + err.message,
-      '#cc0000'
-    );
-	location.reload();
+    showToast('❌ Import gagal:\n' + err.message, '#cc0000');
   }
-  }
+}
+
 
 /*function resetAuditAndBaseline() {
   localStorage.removeItem(AUDIT_LOG_KEY);

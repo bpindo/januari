@@ -239,14 +239,14 @@ function collectBackupData() {
 }
 
 
-function getBackupFileName() {
+/*function getBackupFileName() {
   const d = new Date();
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
 
   return `backup${dd}${mm}${yyyy}.json`;
-}
+}*/
 
 async function backupToGithub() {
   let token = getGithubToken();
@@ -258,7 +258,7 @@ async function backupToGithub() {
     }
   }
 
-  const fileName = getBackupFileName();
+  const fileName = 'backup.json'; // ✅ FILE TETAP
   const path = fileName;
 
   const payload = collectBackupData();
@@ -266,14 +266,15 @@ async function backupToGithub() {
     unescape(encodeURIComponent(JSON.stringify(payload, null, 2)))
   );
 
-  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
+  const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;
+  const viewUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${path}`;
 
   showToast('⏳ Mengirim backup ke GitHub...', '#666');
 
   try {
-    // cek apakah file sudah ada (optional)
+    // 🔍 cek apakah backup.json sudah ada
     let sha = null;
-    const check = await fetch(url, {
+    const check = await fetch(apiUrl, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -282,14 +283,15 @@ async function backupToGithub() {
       sha = existing.sha;
     }
 
-    const res = await fetch(url, {
+    // ⬆️ upload / overwrite
+    const res = await fetch(apiUrl, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: `Backup ${fileName}`,
+        message: 'Update backup.json (auto)',
         content: contentBase64,
         branch: GITHUB_BRANCH,
         sha
@@ -302,9 +304,14 @@ async function backupToGithub() {
     }
 
     showToast(
-      `✅ Backup berhasil\n📁 ${fileName}`,
+      '✅ Backup berhasil\nMembuka file di GitHub...',
       '#008000'
     );
+
+    // 🌐 LANGSUNG ARAHKAN KE FILE
+    setTimeout(() => {
+      window.open(viewUrl, '_blank');
+    }, 800);
 
   } catch (err) {
     showToast(

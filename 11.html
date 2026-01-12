@@ -94,8 +94,8 @@
 </head>
 <body>
 
-<h1>Produk Live SHopee MadGazan</h1>
-<h2>12 Januari 2026</h2>
+<h1>Produk Live MadGazan</h1>
+<h2>Manajemen Shopee Live</h2>
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -241,12 +241,18 @@ function collectBackupData() {
 
 function getBackupFileName() {
   const d = new Date();
+
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
 
-  return `backup${dd}${mm}${yyyy}.json`;
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+
+  return `backup${dd}${mm}${yyyy}_${hh}${mi}${ss}.json`;
 }
+
 
 async function backupToGithub() {
   let token = getGithubToken();
@@ -259,7 +265,7 @@ async function backupToGithub() {
   }
 
   const fileName = getBackupFileName();
-  const path = fileName;
+  const path = `backup/${fileName}`;
 
   const payload = collectBackupData();
   const contentBase64 = btoa(

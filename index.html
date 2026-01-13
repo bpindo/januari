@@ -70,6 +70,15 @@
     .input-buttons{ flex-direction:column; }
     .input-buttons button{ flex:unset; width:100%; }
   }
+  
+  .link-no{
+  width:36px;
+  text-align:right;
+  font-weight:bold;
+  color:#b36b00;
+  margin-right:8px;
+  flex-shrink:0;
+}
 
   /* ✅ Toast Notification Style */
   #toast {
@@ -535,12 +544,14 @@ function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
   const fileNow = dropdownEl.value || 'default.txt';
-  outputEl.innerHTML = allPages[page - 1].map(l => {
+  outputEl.innerHTML = allPages[page - 1].map((l, idx) => {
+  const nomor = idx + 1;
     const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
     return `<div class="link-item">
-  <a class="link" href="${l}" target="_blank">${l}</a>
 
-  
+  <div class="link-no">${nomor}.</div>
+
+  <a class="link" href="${l}" target="_blank">${l}</a>
 
 <a href="javascript:void(0)"
    class="report"
@@ -991,9 +1002,12 @@ function openDeletedPage() {
   if (!deleted.length) {
     outputEl.innerHTML = '<i>Halaman hapus kosong</i>';
   } else {
-    outputEl.innerHTML = deleted.map(l => `
-      <div class="link-item">
-        <a class="link" href="${l}" target="_blank">${l}</a>
+    outputEl.innerHTML = deleted.map((l, idx) => `
+     <div class="link-item">
+
+<div class="link-no">${idx + 1}.</div>
+
+  <a class="link" href="${l}" target="_blank">${l}</a>
 
         <a href="javascript:void(0)"
            class="report"

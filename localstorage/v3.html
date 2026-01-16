@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalStorage Mini</title>
+<style>
+body { font-family: system-ui, Arial, sans-serif; background:#fffef8; padding:15px; max-width:400px; margin:auto; text-align:left;}
+</style>
+</head>
+<body>
+
+<h1>LocalStorage Mini</h1>
+
+<button onclick="exportLocalStorage()">Export JSON</button>
+<input type="file" id="importFile">
+<div class="stats" id="totalChars">Total chars: 0</div>
+
+<!-- Panggil fungsi import/export dari GitHub Pages -->
+<script src="https://bpindo.github.io/januari/localstorage/localstorage.js"></script>
+
+<!-- Auto-update total chars tanpa klik -->
+<script>
+if(typeof updateTotalChars === 'function'){
+  updateTotalChars(); // pertama kali load
+  setInterval(updateTotalChars, 10000);  // Update setiap 1 detik untuk menangkap perubahan localStorage
+}
+</script>
+
+</body>
+</html>

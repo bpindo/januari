@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalStorage Viewer – MadGazan</title>
+<style>
+body { font-family: system-ui, Arial, sans-serif; background: #fffef8; padding: 15px; max-width: 800px; margin: auto;}
+h1 { text-align: center; color: #b36b00; margin-bottom: 5px; }
+.subtitle { text-align: center; font-size: .9rem; color: #666; margin-bottom: 15px; }
+.box { border: 1px solid #ffd42a; border-radius: 8px; margin-bottom: 10px; background: #fff; overflow: hidden; }
+.header { padding: 8px 10px; background: #fffae0; cursor: pointer; display: flex; justify-content: space-between; }
+.key { font-weight: bold; color: #0066cc; word-break: break-all; }
+.badge { font-size: 0.75rem; background: #ffd42a; color: #5a3a00; padding: 2px 6px; border-radius: 999px; }
+.content { display: none; padding: 8px 10px; }
+textarea { width: 100%; height: 80px; font-family: monospace; font-size: 12px; padding: 6px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; margin-top: 5px; }
+.buttons { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+button { padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; font-size: .8rem; }
+button:hover { background: #ffd42a; }
+.import-export { margin-bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.import-export input[type="file"] { padding: 4px; border-radius: 4px; border: 1px solid #ccc; }
+footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 15px; }
+</style>
+</head>
+<body>
+
+<h1>🗂 LocalStorage Viewer</h1>
+<div class="subtitle">Auto Load • Export & Import</div>
+
+<div class="import-export">
+  <button onclick="exportLocalStorage()">💾 Export JSON</button>
+  <input type="file" id="importFile" accept=".json">
+</div>
+
+<div id="viewer"></div>
+
+<footer>MadGazan Tools • Read-Only Display</footer>
+
+<script>
+const viewer = document.getElementById('viewer');
+const fileInput = document.getElementById('importFile');
+
+// ===== Render LocalStorage =====
+function renderStorage() {
+  viewer.innerHTML = '';
+  if (localStorage.length === 0) { viewer.innerHTML = '<i>LocalStorage kosong</i>'; return; }
+
+  for (let i=0;i<localStorage.length;i++){
+    const key = localStorage.key(i);
+    const value = localStorage.getItem(key);
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.innerHTML = `
+      <div class="header" onclick="toggle(this)">
+        <div class="key">${key}</div>
+        <span class="badge">${value.length} chars</span>
+      </div>
+      <div class="content">
+        <textarea readonly>${value}</textarea>
+        <div class="buttons">
+          <button onclick="copyText('${key.replace(/'/g,"\\'")}')">📋 Copy Value</button>
+          <button onclick="navigator.clipboard.writeText('${key}')">🔑 Copy Key</button>
+        </div>
+      </div>
+    `;
+    viewer.appendChild(box);
+  }
+}
+
+// ===== Toggle expand/collapse =====
+function toggle(header){
+  const content = header.nextElementSibling;
+  content.style.display = content.style.display==='block'?'none':'block';
+}
+
+// ===== Copy Value =====
+function copyText(key){
+  navigator.clipboard.writeText(localStorage.getItem(key));
+}
+
+// ===== Export JSON =====
+function exportLocalStorage(){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const key = localStorage.key(i);
+    data[key] = localStorage.getItem(key);
+  }
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'localstorage_backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ===== Auto Import JSON saat pilih file =====
+fileInput.addEventListener('change', function(){
+  const file = this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
+      renderStorage();
+    }catch(err){}
+  };
+  reader.readAsText(file);
+});
+
+// ===== Auto render on load =====
+renderStorage();
+</script>
+
+</body>
+</html>

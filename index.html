@@ -555,19 +555,33 @@ function showPage(page) {
 
 <a href="javascript:void(0)"
    class="report"
-   title="Naikkan ke urutan paling atas"
+   title="Naik ke atas (HALAMAN INI)"
+   onclick="naikkanLinkPage('${l.replace(/'/g, "\\'")}')">
+   ⏫
+</a>
+
+<a href="javascript:void(0)"
+   class="report"
+   title="Turun ke bawah (HALAMAN INI)"
+   onclick="turunkanLinkPage('${l.replace(/'/g, "\\'")}')">
+   ⏬
+</a>
+
+<a href="javascript:void(0)"
+   class="report"
+   title="Naikkan ke urutan paling atas (GLOBAL)"
    onclick="naikkanLink('${l.replace(/'/g, "\\'")}')">
    ⬆️
 </a>
 
+<a href="javascript:void(0)"
+   class="report"
+   title="Turunkan ke urutan paling akhir (GLOBAL)"
+   onclick="turunkanLink('${l.replace(/'/g, "\\'")}')">
+   ⬇️
+</a>
 
-  <a href="javascript:void(0)"
-     class="report"
-     title="Turunkan ke urutan paling akhir"
-     onclick="turunkanLink('${l.replace(/'/g, "\\'")}')">
-     ⬇️
-  </a>
-  
+ 
   <a href="javascript:void(0)"
    class="report"
    title="Pindahkan ke halaman hapus"
@@ -604,82 +618,6 @@ function copyToClipboard() {
   const text = allPages[currentPage - 1].join('\n');
   navigator.clipboard.writeText(text).then(() => showToast('✅ Link halaman ini disalin!', '#008000'));
 }
-
-function naikkanLink(link) {
-  let lines = inputLinksEl.value
-    .split('\n')
-    .map(l => l.trim())
-    .filter(Boolean);
-
-  const idx = lines.indexOf(link);
-  if (idx === -1) return;
-
-  const pid = getProductId(link);
-  if (!pid) return;
-
-  // jika sudah di atas, tidak perlu apa-apa
-  if (idx === 0) {
-    showToast('⬆️ Produk sudah di posisi teratas', '#b36b00');
-    return;
-  }
-
-  // pindahkan ke paling atas
-  lines.splice(idx, 1);
-  lines.unshift(link);
-
-  const currentHash = simpleHash(lines.join('\n'));
-
-  if (baselineHash && currentHash !== baselineHash) {
-    appendAuditLogV2('MOVE', {
-      pid,
-      from: idx,
-      to: 0
-    });
-  }
-
-  inputLinksEl.value = lines.join('\n');
-  processLinks();
-  showPage(currentPage); // langsung tampilkan halaman pertama
-  saveAppData();
-
-  showToast('⬆️ Link dipindahkan ke urutan paling atas', '#008000');
-}
-
-
-function turunkanLink(link) {
-  let lines = inputLinksEl.value
-    .split('\n')
-    .map(l => l.trim())
-    .filter(Boolean);
-
-  const idx = lines.indexOf(link);
-  if (idx === -1) return;
-
-  const pid = getProductId(link);
-  if (!pid) return;
-
-  // pindahkan ke akhir
-  lines.splice(idx, 1);
-  lines.push(link);
-
-  const currentHash = simpleHash(lines.join('\n'));
-
-  if (baselineHash && currentHash !== baselineHash) {
-    appendAuditLogV2('MOVE', {
-      pid,
-      from: idx,
-      to: 'LAST'
-    });
-  }
-
-  inputLinksEl.value = lines.join('\n');
-  processLinks();
-  showPage(currentPage);
-  saveAppData();
-
-  showToast('⬇️ Link dipindahkan ke urutan paling akhir', '#b36b00');
-}
-
 
 
 function replayLog(logText) {
@@ -1119,6 +1057,93 @@ function resetAuditAndBaseline() {
 
   // 3. Reset hash di memori (opsional tapi rapi)
   baselineHash = '';
+}
+
+function updateGlobalFromPages() {
+  const merged = allPages.flat();
+  inputLinksEl.value = merged.join('\n');
+}
+
+function naikkanLinkPage(link) {
+  const pageIndex = currentPage - 1;
+  const page = allPages[pageIndex];
+
+  const idx = page.indexOf(link);
+  if (idx <= 0) {
+    showToast('⬆️ Produk sudah di atas halaman ini', '#b36b00');
+    return;
+  }
+
+  page.splice(idx, 1);
+  page.unshift(link);
+
+  updateGlobalFromPages();
+  processLinks();
+  showPage(currentPage);
+  saveAppData(); // ✅ INI YANG KURANG
+
+  showToast('⏫ Dipindahkan (ikut backup)', '#008000');
+}
+
+function turunkanLinkPage(link) {
+  const pageIndex = currentPage - 1;
+  const page = allPages[pageIndex];
+
+  const idx = page.indexOf(link);
+  if (idx === -1 || idx === page.length - 1) {
+    showToast('⬇️ Produk sudah di bawah halaman ini', '#b36b00');
+    return;
+  }
+
+  page.splice(idx, 1);
+  page.push(link);
+
+  updateGlobalFromPages();
+  processLinks();
+  showPage(currentPage);
+  saveAppData(); // ✅ INI JUGA WAJIB
+
+  showToast('⏬ Dipindahkan (ikut backup)', '#008000');
+}
+
+function naikkanLink(link) {
+  let lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  const idx = lines.indexOf(link);
+  if (idx <= 0) return;
+
+  lines.splice(idx, 1);
+  lines.unshift(link);
+
+  // 🔴 INI KUNCI UTAMA
+  inputLinksEl.value = lines.join('\n');
+
+  processLinks();
+  showPage(currentPage);
+  saveAppData(); // ✅ SEKARANG MASUK BACKUP
+}
+
+function turunkanLink(link) {
+  let lines = inputLinksEl.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  const idx = lines.indexOf(link);
+  if (idx === -1 || idx === lines.length - 1) return;
+
+  lines.splice(idx, 1);
+  lines.push(link);
+
+  // 🔴 INI KUNCI UTAMA
+  inputLinksEl.value = lines.join('\n');
+
+  processLinks();
+  showPage(currentPage);
+  saveAppData(); // ✅ SEKARANG MASUK BACKUP
 }
 
 

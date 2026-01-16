@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalStorage Viewer Mini – MadGazan</title>
+<style>
+body { font-family: system-ui, Arial, sans-serif; background:#fffef8; padding:15px; max-width:600px; margin:auto;}
+h1 { text-align:center; color:#b36b00; margin-bottom:5px;}
+.subtitle { text-align:center; font-size:.9rem; color:#666; margin-bottom:10px;}
+.box { border:1px solid #ffd42a; border-radius:6px; padding:6px 10px; margin-bottom:6px; background:#fff; }
+.header { display:flex; justify-content:space-between; cursor:pointer; }
+.key { font-weight:bold; color:#0066cc; word-break:break-all; }
+.badge { font-size:0.75rem; background:#ffd42a; color:#5a3a00; padding:2px 6px; border-radius:999px; }
+.import-export { margin-bottom:10px; display:flex; gap:6px; flex-wrap:wrap;}
+.import-export input[type="file"] { padding:4px; border-radius:4px; border:1px solid #ccc;}
+button { padding:4px 8px; border-radius:4px; border:1px solid #ccc; cursor:pointer; font-size:.8rem;}
+button:hover { background:#ffd42a;}
+footer { text-align:center; font-size:0.8rem; color:#888; margin-top:10px;}
+</style>
+</head>
+<body>
+
+<h1>🗂 LocalStorage Mini</h1>
+<div class="subtitle">Hidden Viewer • Export & Import</div>
+
+<div class="import-export">
+  <button onclick="exportLocalStorage()">💾 Export JSON</button>
+  <input type="file" id="importFile" accept=".json">
+  <button onclick="viewer.style.display='block'; renderStorage();">👁 Tampilkan Viewer</button>
+</div>
+
+<div id="viewer" style="display:none;"></div>
+
+<footer>MadGazan Tools • Read-Only Display</footer>
+
+<script>
+const viewer = document.getElementById('viewer');
+const fileInput = document.getElementById('importFile');
+
+// ===== Render LocalStorage =====
+function renderStorage(){
+  viewer.innerHTML='';
+  if(localStorage.length===0){ viewer.innerHTML='<i>LocalStorage kosong</i>'; return; }
+
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    const val=localStorage.getItem(key);
+    const box=document.createElement('div');
+    box.className='box';
+    box.innerHTML=`<div class="header">
+      <div class="key">${key}</div>
+      <span class="badge">${val.length} chars</span>
+    </div>`;
+    viewer.appendChild(box);
+  }
+}
+
+// ===== Export JSON =====
+function exportLocalStorage(){
+  const data={};
+  for(let i=0;i<localStorage.length;i++){ data[localStorage.key(i)]=localStorage.getItem(localStorage.key(i)); }
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='localstorage_backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ===== Auto Import JSON saat pilih file =====
+fileInput.addEventListener('change', function(){
+  const file=this.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
+      viewer.style.display='block';
+      renderStorage();
+    }catch(err){}
+  };
+  reader.readAsText(file);
+});
+</script>
+
+</body>
+</html>

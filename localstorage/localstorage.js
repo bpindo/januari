@@ -1,8 +1,7 @@
-// localstorage.js
+// ===== Hitung total chars =====
 const fileInput = document.getElementById('importFile');
 const totalCharsDiv = document.getElementById('totalChars');
 
-// ===== Hitung total chars =====
 function updateTotalChars(){
   let sum = 0;
   for(let i=0;i<localStorage.length;i++){
@@ -14,14 +13,16 @@ function updateTotalChars(){
 // ===== Export JSON =====
 function exportLocalStorage(){
   const data = {};
-  for(let i=0;i<localStorage.length;i++){ data[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); }
+  for(let i=0;i<localStorage.length;i++){
+    data[localStorage.key(i)] = localStorage.getItem(localStorage.key(i));
+  }
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'localstorage_backup.json';
   a.click();
   URL.revokeObjectURL(a.href);
-  updateTotalChars(); // update nempel
+  updateTotalChars();
 }
 
 // ===== Auto Import JSON saat pilih file =====
@@ -32,9 +33,15 @@ fileInput.addEventListener('change', function(){
   reader.onload = function(e){
     try{
       const data = JSON.parse(e.target.result);
-      Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
-      updateTotalChars(); // update nempel
-    }catch(err){}
+      Object.keys(data).forEach(k => localStorage.setItem(k,data[k]));
+      updateTotalChars();
+    } catch(err){}
   };
   reader.readAsText(file);
 });
+
+// ===== Auto-update total chars setiap detik =====
+if(typeof updateTotalChars === 'function'){
+  updateTotalChars(); // pertama kali load
+  setInterval(updateTotalChars, 1000); // update otomatis
+}

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalStorage Viewer – MadGazan</title>
+
+<style>
+body {
+  font-family: system-ui, Arial, sans-serif;
+  background: #fffef8;
+  padding: 15px;
+  max-width: 1000px;
+  margin: auto;
+}
+h1 { text-align: center; color: #b36b00; margin-bottom: 5px; }
+.subtitle { text-align: center; font-size: .9rem; color: #666; margin-bottom: 15px; }
+
+input[type="search"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; font-size: 1rem; }
+
+.box { border: 1px solid #ffd42a; border-radius: 10px; margin-bottom: 10px; background: #fff; overflow: hidden; }
+
+.header { padding: 10px 12px; background: #fffae0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.key { font-weight: bold; color: #0066cc; word-break: break-all; }
+.badge { font-size: 0.75rem; background: #ffd42a; color: #5a3a00; padding: 3px 7px; border-radius: 999px; margin-left: 8px; }
+.content { display: none; padding: 10px 12px; }
+textarea { width: 100%; height: 130px; font-family: monospace; font-size: 12px; padding: 8px; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; }
+.raw { background: #f7f7f7; }
+.json { background: #eefaf0; }
+.buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+button { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; cursor: pointer; font-size: .85rem; }
+button:hover { background: #ffd42a; }
+
+footer { text-align: center; font-size: 0.8rem; color: #888; margin-top: 20px; }
+
+.import-export { margin-bottom: 15px; display: flex; gap: 6px; flex-wrap: wrap; }
+.import-export input[type="file"] { padding: 6px; border-radius: 6px; border: 1px solid #ccc; }
+</style>
+</head>
+
+<body>
+
+<h1>🗂 LocalStorage Viewer</h1>
+<div class="subtitle">READ-ONLY • Aman • Mudah Dibaca</div>
+
+<div class="import-export">
+  <button onclick="exportLocalStorage()">💾 Export ke JSON</button>
+  <input type="file" id="importFile" accept=".json">
+  <button onclick="importLocalStorage()">📂 Import JSON</button>
+</div>
+
+<input type="search" id="search" placeholder="🔍 Cari key localStorage...">
+
+<div id="viewer"></div>
+
+<footer>
+  MadGazan Tools • Tidak mengubah data apa pun
+</footer>
+
+<script>
+const viewer = document.getElementById('viewer');
+const searchInput = document.getElementById('search');
+
+// ===== Render LocalStorage =====
+function renderStorage(filter = '') {
+  viewer.innerHTML = '';
+  if (localStorage.length === 0) { viewer.innerHTML = '<i>LocalStorage kosong</i>'; return; }
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key.toLowerCase().includes(filter.toLowerCase())) continue;
+    const value = localStorage.getItem(key);
+    const size = value.length;
+
+    let prettyJSON = '', isJSON = false;
+    try { prettyJSON = JSON.stringify(JSON.parse(value), null, 2); isJSON = true; } catch {}
+
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.innerHTML = `
+      <div class="header" onclick="toggle(this)">
+        <div class="key">${key}</div>
+        <span class="badge">${size} chars</span>
+      </div>
+      <div class="content">
+        <strong>RAW</strong>
+        <textarea class="raw" readonly>${value}</textarea>
+        ${isJSON ? `<strong>PARSED JSON</strong>
+        <textarea class="json" readonly>${prettyJSON}</textarea>` : ''}
+        <div class="buttons">
+          <button onclick="copyText('${key.replace(/'/g, "\\'")}')">📋 Copy Value</button>
+          <button onclick="navigator.clipboard.writeText('${key}')">🔑 Copy Key</button>
+        </div>
+      </div>`;
+    viewer.appendChild(box);
+  }
+}
+
+function toggle(header) {
+  const content = header.nextElementSibling;
+  content.style.display = content.style.display === 'block' ? 'none' : 'block';
+}
+
+function copyText(key) {
+  navigator.clipboard.writeText(localStorage.getItem(key));
+  alert('Value berhasil disalin');
+}
+
+searchInput.addEventListener('input', e => renderStorage(e.target.value));
+renderStorage();
+
+// ===== Export / Import JSON =====
+function exportLocalStorage() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    data[key] = localStorage.getItem(key);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'localstorage_backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  alert('✅ File JSON berhasil dibuat');
+}
+
+function importLocalStorage() {
+  const fileInput = document.getElementById('importFile');
+  const file = fileInput.files[0];
+  if (!file) return alert('Pilih file JSON dulu');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      Object.keys(data).forEach(key => localStorage.setItem(key, data[key]));
+      alert('✅ Data berhasil diimport');
+      renderStorage();
+    } catch(err) {
+      alert('❌ File tidak valid: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+</script>
+
+</body>
+</html>
